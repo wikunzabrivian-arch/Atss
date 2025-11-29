@@ -12,6 +12,8 @@ from .views import (
     change_password,
     verify_reset_token,
     UserDetailView,
+    send_verification_email,
+    verify_email,
 )
 
 router = DefaultRouter()
@@ -33,8 +35,8 @@ urlpatterns = [
     path('password/reset/confirm/', reset_password_confirm, name='password_reset_confirm'),
     path('password/change/', change_password, name='change_password'),
     path('password/reset/verify/<str:uidb64>/<str:token>/', verify_reset_token, name='verify_reset_token'),
-    path('verify-email/send/', views.send_verification_email, name='send-verification-email'),
-    path('verify-email/<uidb64>/<token>/', views.verify_email, name='verify-email'),
+    path('verify-email/send/', send_verification_email, name='send-verification-email'),
+    path('verify-email/<uidb64>/<token>/', verify_email, name='verify-email'),
     
     path('', include(router.urls)),
 ]

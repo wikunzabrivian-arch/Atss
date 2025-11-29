@@ -1,3 +1,4 @@
+import os
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -12,6 +13,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
+from django.contrib.auth.tokens import default_token_generator
+
 from .serializers import (
     EmailSerializer, 
     ResetPasswordSerializer, 
@@ -47,7 +50,7 @@ def register_user(request):
         # Send verification email
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        verification_url = f"{request.build_absolute_uri('/')}verify-email/{uid}/{token}/"
+        verification_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/verify-email/{uid}/{token}/"
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -229,6 +232,7 @@ def change_password(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def verify_reset_token(request, uidb64, token):
+    # sourcery skip: reintroduce-else, swap-if-else-branches, use-named-expression
     try:
         # Decode the user ID
         uid_str = force_str(urlsafe_base64_decode(uidb64))
