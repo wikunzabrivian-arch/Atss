@@ -66,8 +66,9 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_tailwind',
     'rest_framework.authtoken',
-    'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
+    'django.contrib.sites',
+  
+
 ]
 ASGI_APPLICATION = "atss_backend.asgi.application"
 
@@ -111,40 +112,6 @@ TEMPLATES = [
         },
     },
 ]
-SITE_ID = 1
-
-# OAuth providers configuration
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'OAUTH_PKCE_ENABLED': True,
-    },
-    'facebook': {
-        'METHOD': 'oauth2',
-        'SCOPE': ['email', 'public_profile'],
-        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
-        'FIELDS': [
-            'id',
-            'first_name',
-            'last_name',
-            'email',
-            'picture'
-        ],
-        'EXCHANGE_TOKEN': True,
-        'VERIFIED_EMAIL': False,
-    }
-}
-
-# Redirect URLs
-LOGIN_REDIRECT_URL = '/'
-ACCOUNT_LOGOUT_REDIRECT_URL = '/'
-
 
 
 # Database

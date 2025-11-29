@@ -43,6 +43,11 @@ def register_user(request):
             'refresh': str(refresh),
             'access': str(refresh.access_token),
         }, status=status.HTTP_201_CREATED)
+    if user:
+        # Send verification email
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        verification_url = f"{request.build_absolute_uri('/')}verify-email/{uid}/{token}/"
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -254,3 +259,57 @@ def verify_reset_token(request, uidb64, token):
             {'error': 'Invalid reset link'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_verification_email(request):
+    email = request.data.get('email')
+    
+    try:
+        user = CustomUser.objects.get(email=email)
+        if user.is_verified:
+            return Response({'message': 'Email is already verified'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Generate verification token
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        # Create verification URL
+        verification_url = f"{request.build_absolute_uri('/')}verify-email/{uid}/{token}/"
+        
+        # Send email
+        subject = 'Verify Your ACCES Alumni Account'
+        html_message = render_to_string('emails/verification_email.html', {
+            'user': user,
+            'verification_url': verification_url,
+        })
+        plain_message = strip_tags(html_message)
+        
+        send_mail(
+            subject,
+            plain_message,
+            'noreply@acces-alumni.com',
+            [user.email],
+            html_message=html_message,
+        )
+        
+        return Response({'message': 'Verification email sent'})
+        
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def verify_email(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = CustomUser.objects.get(pk=uid)
+        
+        if default_token_generator.check_token(user, token):
+            user.is_verified = True
+            user.save()
+            return Response({'message': 'Email verified successfully'})
+        else:
+            return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
+            
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+        return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
